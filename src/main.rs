@@ -1,8 +1,8 @@
 use std::{io, path::Path};
-mod reg;
-mod ops;
 mod mem;
+mod ops;
 mod proc;
+mod reg;
 
 fn main() -> io::Result<()> {
     let m = mem::Memory::new();
@@ -48,7 +48,6 @@ fn main() -> io::Result<()> {
         println!("{:?}", proc.registers);
         println!();
     }
-
 
     Ok(())
 }

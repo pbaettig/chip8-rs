@@ -1,6 +1,5 @@
 use crate::{mem, ops, reg};
 
-
 pub struct Processor {
     pub memory: mem::Memory,
     pub registers: reg::Registers,
@@ -104,18 +103,17 @@ mod tests {
 
     fn load_test_program(mem: &mut Memory) {
         // ** Construct a test program in Memory
-        // Goto 0x4d2 (1234)
-        let jmp: [u8;2] =[0x14, 0xd2]; 
-        
-        let subroutine: [u8;10] = [
+        let jmp: [u8; 2] = [0x14, 0xd2]; // Goto 0x4d2 (1234)
+
+        let subroutine: [u8; 10] = [
             0x68, 0x32, // Set V8 to 50
             0x69, 0x2a, // Set V9 to 42
             0x88, 0x95, // V8 =- V9
             0x88, 0x95, // V8 =- V9
             0x00, 0xee, // return
         ];
-        
-        let main: [u8;18] = [
+
+        let main: [u8; 18] = [
             0x6a, 0xFA, // Set VA to 250
             0x7a, 0x05, // Add 5 to VA
             0xA0, 0xFF, // Set I = 255
@@ -128,10 +126,7 @@ mod tests {
         ];
         mem.set_word(512, jmp);
         mem.load_array(1024, &subroutine);
-        mem.load_array(
-            1234,
-            &main
-        );
+        mem.load_array(1234, &main);
     }
 
     #[test]
@@ -140,8 +135,9 @@ mod tests {
         load_test_program(&mut mem);
 
         let mut proc = Processor::new(mem);
-        proc.registers.from_array(&[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]);
-        
+        proc.registers
+            .from_array(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+
         // Execute jmp to 1234 (0x4d2)
         proc.decode_and_execute();
         assert_eq!(proc.PC, 1234);
@@ -195,7 +191,6 @@ mod tests {
         assert_eq!(proc.registers.V8, 8);
         assert_eq!(proc.registers.VF, 0);
 
-
         // V8 -= V9 (again, overflows)
         proc.decode_and_execute();
         assert_eq!(proc.registers.V8, 222);
@@ -210,6 +205,5 @@ mod tests {
         // skip if VA == 41 (true)
         proc.decode_and_execute();
         assert_eq!(proc.PC, pre_skip_pc + 4);
-
     }
 }

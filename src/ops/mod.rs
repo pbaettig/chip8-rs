@@ -2,70 +2,26 @@ fn combine_nibbles(n1: u8, n2: u8, n3: u8) -> u16 {
     (n1 as u16).wrapping_shl(8) + (n2 as u16).wrapping_shl(4) + (n3 as u16)
 }
 
-
 #[derive(Debug)]
 pub enum Opcode {
-    Call {
-        addr: u16,
-    },
+    Call { addr: u16 },
     Display,
     Return,
-    Goto {
-        addr: u16,
-    },
-    CallSubroutine {
-        addr: u16,
-    },
-    SkipIfRegisterEquals {
-        register: u8,
-        value: u8,
-    },
-    SkipIfRegisterNotEquals {
-        register: u8,
-        value: u8,
-    },
-    SkipIfRegistersEqual {
-        register_1: u8,
-        register_2: u8,
-    },
-    SetRegister {
-        register: u8,
-        value: u8,
-    },
-    AddToRegister {
-        register: u8,
-        value: u8,
-    },
-    CopyRegister {
-        src_register: u8,
-        dst_register: u8,
-    },
-    ApplyBitwiseOr {
-        value_register: u8,
-        operand_register: u8,
-    },
-    ApplyBitwiseAnd {
-        value_register: u8,
-        operand_register: u8,
-    },
-    ApplyBitwiseXor {
-        value_register: u8,
-        operand_register: u8,
-    },
-    AddRegisters {
-        value_register: u8,
-        operand_register: u8,
-    },
-    SubtractRegisters {
-        value_register: u8,
-        operand_register: u8,
-    },
-    SetI {
-        addr: u16,
-    },
-    DumpRegisters {
-        end_register: u8,
-    },
+    Goto { addr: u16 },
+    CallSubroutine { addr: u16 },
+    SkipIfRegisterEquals { register: u8, value: u8 },
+    SkipIfRegisterNotEquals { register: u8, value: u8 },
+    SkipIfRegistersEqual { register_1: u8, register_2: u8 },
+    SetRegister { register: u8, value: u8 },
+    AddToRegister { register: u8, value: u8 },
+    CopyRegister { src_register: u8, dst_register: u8 },
+    ApplyBitwiseOr { value_register: u8, operand_register: u8 },
+    ApplyBitwiseAnd { value_register: u8, operand_register: u8 },
+    ApplyBitwiseXor { value_register: u8, operand_register: u8 },
+    AddRegisters { value_register: u8, operand_register: u8 },
+    SubtractRegisters { value_register: u8, operand_register: u8 },
+    SetI { addr: u16 },
+    DumpRegisters { end_register: u8 },
 }
 
 impl Opcode {
@@ -78,8 +34,7 @@ impl Opcode {
         opcode_nibbles[3] = opcode_bytes[1] & 0x0f;
 
         let addr_12bit: u16 = combine_nibbles(opcode_nibbles[1], opcode_nibbles[2], opcode_nibbles[3]);
-        
-       
+
         // println!("{:#x} {:#x} | {:04b} {:04b} {:04b} ({:012b})", opcode_bytes[0], opcode_bytes[1], opcode_nibbles[1], opcode_nibbles[2], opcode_nibbles[3], addr_12bit);
         match opcode_nibbles {
             [0x0, 0x0, 0xe, 0x0] => Some(Self::Display),
@@ -132,9 +87,7 @@ impl Opcode {
                 operand_register: r_op,
             }),
             [0xa, _, _, _] => Some(Self::SetI { addr: addr_12bit }),
-            [0xf, r_end, 0x5, 0x5] => Some(Self::DumpRegisters {
-                end_register: r_end,
-            }),
+            [0xf, r_end, 0x5, 0x5] => Some(Self::DumpRegisters { end_register: r_end }),
             _ => None,
         }
     }
@@ -146,7 +99,16 @@ mod tests {
 
     #[test]
     fn test_opcode_parse() {
-        assert!(matches!(Opcode::parse([0xab, 0xcd]), Some(Opcode::SetI { addr: 0xbcd })));
-        assert!(matches!(Opcode::parse([0x62, 0xfe]), Some(Opcode::SetRegister {register: 0x2, value: 0xfe})));
+        assert!(matches!(
+            Opcode::parse([0xab, 0xcd]),
+            Some(Opcode::SetI { addr: 0xbcd })
+        ));
+        assert!(matches!(
+            Opcode::parse([0x62, 0xfe]),
+            Some(Opcode::SetRegister {
+                register: 0x2,
+                value: 0xfe
+            })
+        ));
     }
 }

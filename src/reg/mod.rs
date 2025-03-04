@@ -41,28 +41,28 @@ impl Registers {
     }
 
     pub fn from_array(&mut self, vs: &[u8; 16]) {
-            self.V0 = vs[0];
-            self.V1 = vs[1];
-            self.V2 = vs[2];
-            self.V3 = vs[3];
-            self.V4 = vs[4];
-            self.V5 = vs[5];
-            self.V6 = vs[6];
-            self.V7 = vs[7];
-            self.V8 = vs[8];
-            self.V9 = vs[9];
-            self.VA = vs[10];
-            self.VB = vs[11];
-            self.VC = vs[12];
-            self.VD = vs[13];
-            self.VE = vs[14];
-            self.VF = vs[15];
+        self.V0 = vs[0];
+        self.V1 = vs[1];
+        self.V2 = vs[2];
+        self.V3 = vs[3];
+        self.V4 = vs[4];
+        self.V5 = vs[5];
+        self.V6 = vs[6];
+        self.V7 = vs[7];
+        self.V8 = vs[8];
+        self.V9 = vs[9];
+        self.VA = vs[10];
+        self.VB = vs[11];
+        self.VC = vs[12];
+        self.VD = vs[13];
+        self.VE = vs[14];
+        self.VF = vs[15];
     }
 
     pub fn as_array(&self) -> [&u8; 16] {
         [
-            &self.V0, &self.V1, &self.V2, &self.V3, &self.V4, &self.V5, &self.V6, &self.V7,
-            &self.V8, &self.V9, &self.VA, &self.VB, &self.VC, &self.VD, &self.VE, &self.VF,
+            &self.V0, &self.V1, &self.V2, &self.V3, &self.V4, &self.V5, &self.V6, &self.V7, &self.V8, &self.V9,
+            &self.VA, &self.VB, &self.VC, &self.VD, &self.VE, &self.VF,
         ]
     }
 

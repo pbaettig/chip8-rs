@@ -1,12 +1,9 @@
-
+use std::fmt;
 use std::fs::File;
 use std::io::{self, ErrorKind, Read};
 use std::path::Path;
-use std::fmt;
 
-pub struct MemorySlice {
-
-}
+pub struct MemorySlice {}
 
 pub struct Memory {
     pub mem: [u8; 4096],
@@ -54,7 +51,6 @@ impl Memory {
         self.mem[0x96..0x9b].copy_from_slice(&[0xF0, 0x80, 0xF0, 0x80, 0xF0]); // E
         self.mem[0x9b..0xa0].copy_from_slice(&[0xF0, 0x80, 0xF0, 0x80, 0x80]); // F
     }
-
 
     pub fn load_rom(&mut self, p: &Path) -> io::Result<()> {
         let mut file = File::open(p)?;

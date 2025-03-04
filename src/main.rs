@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use std::io;
 mod reg;
 mod ops;
@@ -38,18 +37,15 @@ fn main() -> io::Result<()> {
     ];
 
     let subroutine: [u8; 4] = [0x00, 0xE0, 0x00, 0xEE];
-
-    proc.memory.mem[512..(512 + program.len())].copy_from_slice(&program);
-    proc.memory.mem[1024..(1024 + subroutine.len())].copy_from_slice(&subroutine);
+    proc.memory.load_array(512, &program);
+    proc.memory.load_array(1024, &subroutine);
+    println!("{}", proc.memory);
     for _ in 0..((program.len() / 2) + (subroutine.len() / 2) + 1) {
         proc.decode_and_execute();
         println!("{:?}", proc.registers);
         println!();
     }
 
-    // for (i, v) in proc.memory.mem[255..271].iter().enumerate() {
-    //     println!("{}: {v}", i+255)
-    // }
 
     Ok(())
 }

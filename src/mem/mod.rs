@@ -2,11 +2,32 @@
 use std::fs::File;
 use std::io::{self, ErrorKind, Read};
 use std::path::Path;
+use std::fmt;
+
+pub struct MemorySlice {
+    
+}
 
 pub struct Memory {
     pub mem: [u8; 4096],
 }
 
+impl fmt::Display for Memory {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let chunk = 32;
+        let mut i = 0;
+        while i < self.mem.len() {
+            _ = write!(f, "{:#06x}:  ", i);
+            for j in i..(i + chunk) {
+                _ = write!(f, "{:02x} ", self.mem[j]);
+            }
+            i += chunk;
+            _ = write!(f, "\n");
+        }
+
+        write!(f, "")
+    }
+}
 impl Memory {
     pub fn new() -> Self {
         let mut m = Self { mem: [0; 4096] };
@@ -34,6 +55,7 @@ impl Memory {
         self.mem[0x9b..0xa0].copy_from_slice(&[0xF0, 0x80, 0xF0, 0x80, 0x80]); // F
     }
 
+
     fn load_rom(&mut self, p: &Path) -> io::Result<()> {
         let mut file = File::open(p)?;
         let mut opcode: [u8; 2] = [0; 2];
@@ -56,6 +78,11 @@ impl Memory {
                 Err(e) => return Err(e),
             }
         }
+    }
+
+    pub fn load_array(&mut self, loc: usize, b: &[u8]) {
+        let end = loc + b.len();
+        self.mem[loc..end].copy_from_slice(b);
     }
 
     pub fn set_word(&mut self, index: usize, bs: [u8; 2]) {

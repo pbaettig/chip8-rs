@@ -5,7 +5,7 @@ use std::path::Path;
 use std::fmt;
 
 pub struct MemorySlice {
-    
+
 }
 
 pub struct Memory {
@@ -56,7 +56,7 @@ impl Memory {
     }
 
 
-    fn load_rom(&mut self, p: &Path) -> io::Result<()> {
+    pub fn load_rom(&mut self, p: &Path) -> io::Result<()> {
         let mut file = File::open(p)?;
         let mut opcode: [u8; 2] = [0; 2];
         let mut i: usize = 512;
@@ -66,7 +66,6 @@ impl Memory {
                 .map_err(|e| std::io::Error::new(ErrorKind::Other, e))
             {
                 Ok(0) => {
-                    println!("Finished reading file");
                     return Ok(());
                 }
                 Ok(_) => {
@@ -93,7 +92,11 @@ impl Memory {
         self.mem[index] = b
     }
 
-    pub fn get_bytes(&self, i: usize) -> [u8; 2] {
+    pub fn get_byte(&self, i: usize) -> u8 {
+        self.mem[i]
+    }
+
+    pub fn get_word(&self, i: usize) -> [u8; 2] {
         let mut bs: [u8; 2] = [0; 2];
         bs[0] = self.mem[i];
         bs[1] = self.mem[i + 1];

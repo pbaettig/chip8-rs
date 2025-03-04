@@ -1,4 +1,4 @@
-use std::io;
+use std::{io, path::Path};
 mod reg;
 mod ops;
 mod mem;
@@ -39,6 +39,9 @@ fn main() -> io::Result<()> {
     let subroutine: [u8; 4] = [0x00, 0xE0, 0x00, 0xEE];
     proc.memory.load_array(512, &program);
     proc.memory.load_array(1024, &subroutine);
+
+    proc.memory.load_rom(Path::new("rom/keypad_test.ch8")).unwrap();
+
     println!("{}", proc.memory);
     for _ in 0..((program.len() / 2) + (subroutine.len() / 2) + 1) {
         proc.decode_and_execute();

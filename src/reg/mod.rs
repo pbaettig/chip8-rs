@@ -40,25 +40,23 @@ impl Registers {
         }
     }
 
-    pub fn from_array(vs: [u8; 16]) -> Self {
-        Self {
-            V0: vs[0],
-            V1: vs[1],
-            V2: vs[2],
-            V3: vs[3],
-            V4: vs[4],
-            V5: vs[5],
-            V6: vs[6],
-            V7: vs[7],
-            V8: vs[8],
-            V9: vs[9],
-            VA: vs[10],
-            VB: vs[11],
-            VC: vs[12],
-            VD: vs[13],
-            VE: vs[14],
-            VF: vs[15],
-        }
+    pub fn from_array(&mut self, vs: &[u8; 16]) {
+            self.V0 = vs[0];
+            self.V1 = vs[1];
+            self.V2 = vs[2];
+            self.V3 = vs[3];
+            self.V4 = vs[4];
+            self.V5 = vs[5];
+            self.V6 = vs[6];
+            self.V7 = vs[7];
+            self.V8 = vs[8];
+            self.V9 = vs[9];
+            self.VA = vs[10];
+            self.VB = vs[11];
+            self.VC = vs[12];
+            self.VD = vs[13];
+            self.VE = vs[14];
+            self.VF = vs[15];
     }
 
     pub fn as_array(&self) -> [&u8; 16] {

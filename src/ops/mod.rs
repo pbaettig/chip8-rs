@@ -79,11 +79,8 @@ impl Opcode {
 
         let addr_12bit: u16 = combine_nibbles(opcode_nibbles[1], opcode_nibbles[2], opcode_nibbles[3]);
         
-        // (opcode_nibbles[1] as u16).wrapping_shl(8)
-        //     + (opcode_nibbles[2] as u16).wrapping_shl(4)
-        //     + (opcode_nibbles[3] as u16);
-
-        println!("{:#x} {:#x} | {:04b} {:04b} {:04b} ({:012b})", opcode_bytes[0], opcode_bytes[1], opcode_nibbles[1], opcode_nibbles[2], opcode_nibbles[3], addr_12bit);
+       
+        // println!("{:#x} {:#x} | {:04b} {:04b} {:04b} ({:012b})", opcode_bytes[0], opcode_bytes[1], opcode_nibbles[1], opcode_nibbles[2], opcode_nibbles[3], addr_12bit);
         match opcode_nibbles {
             [0x0, 0x0, 0xe, 0x0] => Some(Self::Display),
             [0x0, 0x0, 0xe, 0xe] => Some(Self::Return),
@@ -143,3 +140,13 @@ impl Opcode {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_opcode_parse() {
+        assert!(matches!(Opcode::parse([0xab, 0xcd]), Some(Opcode::SetI { addr: 0xbcd })));
+        assert!(matches!(Opcode::parse([0x62, 0xfe]), Some(Opcode::SetRegister {register: 0x2, value: 0xfe})));
+    }
+}

@@ -1,4 +1,5 @@
 use std::{io, path::Path};
+mod errs;
 mod mem;
 mod ops;
 mod proc;
@@ -42,12 +43,17 @@ fn main() -> io::Result<()> {
 
     proc.memory.load_rom(Path::new("rom/keypad_test.ch8")).unwrap();
 
-    println!("{}", proc.memory);
-    for _ in 0..((program.len() / 2) + (subroutine.len() / 2) + 1) {
-        proc.decode_and_execute();
-        println!("{:?}", proc.registers);
-        println!();
+    // println!("{}", proc.memory);
+    for _ in 0..4 {
+        proc.reset();
+        for _ in 0..((program.len() / 2) + (subroutine.len() / 2) + 1) {
+            println!("{}", proc.PC);
+            println!("Took: {:?}", proc.execute().unwrap());
+            println!("{:?}", proc.registers);
+            println!();
+        }
     }
+    
 
     Ok(())
 }

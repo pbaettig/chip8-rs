@@ -1,12 +1,26 @@
+use std::error::Error;
 use std::fmt;
 use std::fs::File;
 use std::io::{self, ErrorKind, Read};
 use std::path::Path;
 
+static MAX_SIZE: usize = 4096;
+
+#[derive(Debug, Clone)]
+pub struct MemoryError {}
+
+impl fmt::Display for MemoryError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "memory error")
+    }
+}
+
+impl Error for MemoryError {}
+
 pub struct MemorySlice {}
 
 pub struct Memory {
-    pub mem: [u8; 4096],
+    pub mem: [u8; MAX_SIZE],
 }
 
 impl fmt::Display for Memory {
@@ -75,27 +89,73 @@ impl Memory {
         }
     }
 
-    pub fn load_array(&mut self, loc: usize, b: &[u8]) {
+    fn in_bounds(i: usize) -> Result<(), MemoryError> {
+        if i > MAX_SIZE - 1 {
+            Err(MemoryError {})
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn load_array(&mut self, loc: usize, b: &[u8]) -> Result<(), MemoryError> {
         let end = loc + b.len();
+        Memory::in_bounds(end)?;
         self.mem[loc..end].copy_from_slice(b);
+        Ok(())
     }
 
-    pub fn set_word(&mut self, index: usize, bs: [u8; 2]) {
+    pub fn set_word(&mut self, index: usize, bs: [u8; 2]) -> Result<(), MemoryError> {
+        Memory::in_bounds(index + 1)?;
+
         self.mem[index] = bs[0];
-        self.mem[index + 1] = bs[1]
+        self.mem[index + 1] = bs[1];
+        Ok(())
     }
-    pub fn set_byte(&mut self, index: usize, b: u8) {
-        self.mem[index] = b
+    pub fn set_byte(&mut self, index: usize, b: u8) -> Result<(), MemoryError> {
+        Memory::in_bounds(index)?;
+        println!("set byte at {}", index);
+        self.mem[index] = b;
+        Ok(())
     }
 
-    pub fn get_byte(&self, i: usize) -> u8 {
-        self.mem[i]
+    pub fn get_byte(&self, index: usize) -> Result<u8, MemoryError> {
+        Memory::in_bounds(index)?;
+
+        Ok(self.mem[index])
     }
 
-    pub fn get_word(&self, i: usize) -> [u8; 2] {
+    pub fn get_word(&self, index: usize) -> Result<[u8; 2], MemoryError> {
+        Memory::in_bounds(index + 1)?;
         let mut bs: [u8; 2] = [0; 2];
-        bs[0] = self.mem[i];
-        bs[1] = self.mem[i + 1];
-        bs
+        bs[0] = self.mem[index];
+        bs[1] = self.mem[index + 1];
+        Ok(bs)
+    }
+}
+
+mod tests {
+    use super::{Memory, MAX_SIZE};
+
+    #[test]
+    fn test_get_set() {
+        let mut mem = Memory::new();
+
+        for addr in 0..MAX_SIZE {
+            let v = (addr % 255) as u8;
+            assert!(matches!(mem.set_byte(addr, v), Ok(())));
+            assert_eq!(mem.get_byte(addr).unwrap(), v);
+        }
+
+        for addr in (0..MAX_SIZE - 2).step_by(2) {
+            let v = (addr % 255) as u8;
+            let bs: [u8; 2] = [0, v];
+            assert!(matches!(mem.set_word(addr, bs), Ok(())));
+            assert_eq!(mem.get_word(addr).unwrap(), [0, v]);
+        }
+
+        assert!(matches!(mem.get_byte(5123), Err(_)));
+        assert!(matches!(mem.set_byte(4097, 42), Err(_)));
+        assert!(matches!(mem.get_word(4095), Err(_)));
+        assert!(matches!(mem.set_word(4095, [0, 1]), Err(_)));
     }
 }

@@ -1,4 +1,29 @@
 use crate::{mem, ops, reg};
+use std::fmt;
+use std::{error::Error, time::Duration, time::Instant};
+
+static RESET_VECTOR: usize = 512;
+
+#[derive(Debug, Clone)]
+pub enum ErrorKind {
+    InvalidRegister(u8),
+    OpcodeNotImplemented(ops::Opcode),
+    OpcodeInvalid([u8; 2]),
+    InvalidMemoryAccess,
+}
+
+#[derive(Debug, Clone)]
+pub struct ProcError {
+    pub kind: ErrorKind,
+}
+
+impl fmt::Display for ProcError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self.kind)
+    }
+}
+
+impl Error for ProcError {}
 
 pub struct Processor {
     pub memory: mem::Memory,
@@ -14,18 +39,20 @@ impl Processor {
         Processor {
             memory: mem,
             registers: reg::Registers::new(),
-            PC: 512,
+            PC: RESET_VECTOR,
             SP: 0,
             I: 0,
             stack: [0; 128],
         }
     }
 
-    fn fetch(&mut self) -> [u8; 2] {
-        let bs = self.memory.get_word(self.PC);
+    fn fetch(&mut self) -> Result<[u8; 2], ProcError> {
+        let bs = self.memory.get_word(self.PC).map_err(|_| ProcError {
+            kind: ErrorKind::InvalidMemoryAccess,
+        })?;
         self.PC += 2;
 
-        bs
+        Ok(bs)
     }
 
     fn push_stack(&mut self, val: u16) {
@@ -38,60 +65,115 @@ impl Processor {
         self.stack[self.SP]
     }
 
-    pub fn decode_and_execute(&mut self) {
-        let op = ops::Opcode::parse(self.fetch()).unwrap();
+    pub fn reset(&mut self) {
+        self.PC = RESET_VECTOR;
+        self.SP = 0;
+    }
+
+    fn get_register(&self, index: u8) -> Result<u8, ProcError> {
+        self.registers.get(index).ok_or(ProcError {
+            kind: ErrorKind::InvalidRegister(index),
+        })
+    }
+
+    fn fetch_and_decode(&mut self) -> Result<ops::Opcode, ProcError> {
+        let bs = self.fetch()?;
+        ops::Opcode::parse(bs).map_err(|_| ProcError {
+            kind: ErrorKind::OpcodeInvalid(bs),
+        })
+    }
+
+    pub fn execute(&mut self) -> Result<Duration, ProcError> {
+        let start = Instant::now();
+        let opcode = self.fetch_and_decode()?;
         // println!("(PC:{}, SP:{}) | {op:?}", self.PC, self.SP);
-        match op {
+        match opcode {
             ops::Opcode::CallSubroutine { addr } => {
                 self.push_stack(self.PC as u16);
                 self.PC = addr as usize;
+
+                Ok(start.elapsed())
             }
-            ops::Opcode::Goto { addr } => self.PC = addr as usize,
+            ops::Opcode::Goto { addr } => {
+                self.PC = addr as usize;
+                Ok(start.elapsed())
+            }
             ops::Opcode::Return => {
                 self.PC = self.pop_stack() as usize;
+                Ok(start.elapsed())
             }
-            ops::Opcode::SetRegister { register, value } => self.registers.set(register, value),
-            ops::Opcode::AddToRegister { register, value } => self
-                .registers
-                .set(register, self.registers.get(register).unwrap() + value),
+            ops::Opcode::SetRegister { register, value } => {
+                self.registers.set(register, value);
+                Ok(start.elapsed())
+            }
+            ops::Opcode::AddToRegister { register, value } => {
+                let r_v = self.get_register(register)?;
+                self.registers.set(register, r_v + value);
+                Ok(start.elapsed())
+            }
             ops::Opcode::AddRegisters {
                 value_register,
                 operand_register,
             } => {
-                let a = self.registers.get(value_register).unwrap();
-                let b = self.registers.get(operand_register).unwrap();
+                let a = self.get_register(value_register)?;
+                let b = self.get_register(operand_register)?;
 
                 let (v, of) = a.overflowing_add(b);
                 self.registers.VF = if of { 1 } else { 0 };
 
                 self.registers.set(value_register, v);
+                Ok(start.elapsed())
             }
             ops::Opcode::SubtractRegisters {
                 value_register,
                 operand_register,
             } => {
-                let a = self.registers.get(value_register).unwrap();
-                let b = self.registers.get(operand_register).unwrap();
+                let a = self.get_register(value_register)?;
+                let b = self.get_register(operand_register)?;
 
                 let (v, of) = a.overflowing_sub(b);
                 self.registers.VF = if of { 1 } else { 0 };
                 self.registers.set(value_register, v);
+                Ok(start.elapsed())
             }
             ops::Opcode::SetI { addr } => {
                 self.I = addr;
+                Ok(start.elapsed())
             }
             ops::Opcode::DumpRegisters { end_register } => {
                 for r_v in self.registers.as_array()[0..(end_register + 1) as usize].iter() {
                     self.memory.set_byte(self.I as usize, **r_v);
                     self.I += 1;
                 }
+                Ok(start.elapsed())
             }
             ops::Opcode::SkipIfRegisterEquals { register, value } => {
-                if self.registers.get(register).unwrap() == value {
+                let r_v = self.get_register(register)?;
+                if r_v == value {
                     self.PC += 2;
                 }
+                Ok(start.elapsed())
             }
-            _ => return,
+            ops::Opcode::SkipIfRegisterNotEquals { register, value } => {
+                let r_v = self.get_register(register)?;
+                if r_v != value {
+                    self.PC += 2;
+                }
+                Ok(start.elapsed())
+            }
+            ops::Opcode::SkipIfRegistersEqual { register_1, register_2 } => {
+                let r1_value = self.get_register(register_1)?;
+                let r2_value = self.get_register(register_2)?;
+                if r1_value == r2_value {
+                    self.PC += 2;
+                }
+                Ok(start.elapsed())
+            }
+            ops::Opcode::Display => Ok(start.elapsed()),
+
+            _ => Err(ProcError {
+                kind: ErrorKind::OpcodeNotImplemented(opcode),
+            }),
         }
     }
 }
@@ -139,71 +221,71 @@ mod tests {
             .from_array(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
 
         // Execute jmp to 1234 (0x4d2)
-        proc.decode_and_execute();
+        proc.execute();
         assert_eq!(proc.PC, 1234);
 
         // Set VA = 250
-        proc.decode_and_execute();
+        proc.execute();
         assert_eq!(proc.registers.VA, 250);
 
         // VA += 255
-        proc.decode_and_execute();
+        proc.execute();
         assert_eq!(proc.registers.VA, 255);
 
         // Set I = 255
-        proc.decode_and_execute();
+        proc.execute();
         assert_eq!(proc.I, 255);
 
         // Dump registers VA-V8 to memory starting at 255 (0xff)
-        proc.decode_and_execute();
+        proc.execute();
         for i in 255..264 {
-            let v = proc.memory.get_byte(i);
+            let v = proc.memory.get_byte(i).unwrap();
             let e = (i - 254) as u8;
             assert_eq!(v, e);
         }
-        assert_eq!(proc.memory.get_byte(264), 0);
+        assert_eq!(proc.memory.get_byte(264).unwrap(), 0);
 
         // Set VE = 42
-        proc.decode_and_execute();
+        proc.execute();
         assert_eq!(proc.registers.VE, 42);
 
         // VE += VA (overflows)
-        proc.decode_and_execute();
+        proc.execute();
         assert_eq!(proc.registers.VA, 41);
         assert_eq!(proc.registers.VF, 1);
 
         // Call Subroutine at 0x400 (1024)
-        proc.decode_and_execute();
+        proc.execute();
         assert_eq!(proc.PC, 1024);
         assert_eq!(proc.SP, 1);
         assert_eq!(proc.stack[0], 1248);
 
         // Set V8 = 50
-        proc.decode_and_execute();
+        proc.execute();
         assert_eq!(proc.registers.V8, 50);
 
         // Set V9 = 42
-        proc.decode_and_execute();
+        proc.execute();
         assert_eq!(proc.registers.V9, 42);
 
         // V8 -= V9
-        proc.decode_and_execute();
+        proc.execute();
         assert_eq!(proc.registers.V8, 8);
         assert_eq!(proc.registers.VF, 0);
 
         // V8 -= V9 (again, overflows)
-        proc.decode_and_execute();
+        proc.execute();
         assert_eq!(proc.registers.V8, 222);
         assert_eq!(proc.registers.VF, 1);
 
         // return from subroutine
-        proc.decode_and_execute();
+        proc.execute();
         assert_eq!(proc.SP, 0);
         assert_eq!(proc.PC, proc.stack[proc.SP] as usize);
 
         let pre_skip_pc = proc.PC;
         // skip if VA == 41 (true)
-        proc.decode_and_execute();
+        proc.execute();
         assert_eq!(proc.PC, pre_skip_pc + 4);
     }
 }

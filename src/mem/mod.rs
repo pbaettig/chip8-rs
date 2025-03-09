@@ -1,3 +1,4 @@
+#![allow(unused)]
 use std::error::Error;
 use std::fmt;
 use std::fs::File;
@@ -7,7 +8,7 @@ use std::path::Path;
 static MAX_SIZE: usize = 4096;
 
 #[derive(Debug, Clone)]
-pub struct MemoryError {}
+pub struct MemoryError (usize);
 
 impl fmt::Display for MemoryError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -68,20 +69,20 @@ impl Memory {
 
     pub fn load_rom(&mut self, p: &Path) -> io::Result<()> {
         let mut file = File::open(p)?;
-        let mut opcode: [u8; 2] = [0; 2];
+        let mut instruction: [u8; 2] = [0; 2];
         let mut i: usize = 512;
         loop {
             match file
-                .read(&mut opcode)
+                .read(&mut instruction)
                 .map_err(|e| std::io::Error::new(ErrorKind::Other, e))
             {
                 Ok(0) => {
                     return Ok(());
                 }
                 Ok(_) => {
-                    self.mem[i] = opcode[0];
+                    self.mem[i] = instruction[0];
                     i += 1;
-                    self.mem[i] = opcode[1];
+                    self.mem[i] = instruction[1];
                     i += 1;
                 }
                 Err(e) => return Err(e),
@@ -91,7 +92,7 @@ impl Memory {
 
     fn in_bounds(i: usize) -> Result<(), MemoryError> {
         if i > MAX_SIZE - 1 {
-            Err(MemoryError {})
+            Err(MemoryError(i))
         } else {
             Ok(())
         }
@@ -113,7 +114,6 @@ impl Memory {
     }
     pub fn set_byte(&mut self, index: usize, b: u8) -> Result<(), MemoryError> {
         Memory::in_bounds(index)?;
-        println!("set byte at {}", index);
         self.mem[index] = b;
         Ok(())
     }
@@ -134,7 +134,7 @@ impl Memory {
 }
 
 mod tests {
-    use super::{Memory, MAX_SIZE};
+    use super::{Memory, MAX_SIZE, MemoryError};
 
     #[test]
     fn test_get_set() {
@@ -153,9 +153,9 @@ mod tests {
             assert_eq!(mem.get_word(addr).unwrap(), [0, v]);
         }
 
-        assert!(matches!(mem.get_byte(5123), Err(_)));
-        assert!(matches!(mem.set_byte(4097, 42), Err(_)));
-        assert!(matches!(mem.get_word(4095), Err(_)));
-        assert!(matches!(mem.set_word(4095, [0, 1]), Err(_)));
+        assert!(matches!(mem.get_byte(5123), Err(MemoryError(5123))));
+        assert!(matches!(mem.set_byte(4097, 42), Err(MemoryError(4097))));
+        assert!(matches!(mem.get_word(4095), Err(MemoryError(4096))));
+        assert!(matches!(mem.set_word(4095, [0, 1]), Err(MemoryError(4096))));
     }
 }

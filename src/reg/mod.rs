@@ -1,114 +1,187 @@
+#![allow(dead_code)]
+
 use std::fmt;
+use std::error::Error;
+
+pub const V0: u8 = 0;
+pub const V1: u8 = 1;
+pub const V2: u8 = 2;
+pub const V3: u8 = 3;
+pub const V4: u8 = 4;
+pub const V5: u8 = 5;
+pub const V6: u8 = 6;
+pub const V7: u8 = 7;
+pub const V8: u8 = 8;
+pub const V9: u8 = 9;
+pub const VA: u8 = 10;
+pub const VB: u8 = 11;
+pub const VC: u8 = 12;
+pub const VD: u8 = 13;
+pub const VE: u8 = 14;
+pub const VF: u8 = 15;
+
+#[derive(Debug, Clone)]
+pub struct RegisterError (u8);
+
+impl fmt::Display for RegisterError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "register error")
+    }
+}
+
+impl Error for RegisterError {}
 
 #[derive(Debug)]
 pub struct Registers {
-    pub V0: u8,
-    pub V1: u8,
-    pub V2: u8,
-    pub V3: u8,
-    pub V4: u8,
-    pub V5: u8,
-    pub V6: u8,
-    pub V7: u8,
-    pub V8: u8,
-    pub V9: u8,
-    pub VA: u8,
-    pub VB: u8,
-    pub VC: u8,
-    pub VD: u8,
-    pub VE: u8,
-    pub VF: u8,
+    pub v0: u8,
+    pub v1: u8,
+    pub v2: u8,
+    pub v3: u8,
+    pub v4: u8,
+    pub v5: u8,
+    pub v6: u8,
+    pub v7: u8,
+    pub v8: u8,
+    pub v9: u8,
+    pub va: u8,
+    pub vb: u8,
+    pub vc: u8,
+    pub vd: u8,
+    pub ve: u8,
+    pub vf: u8,
 }
 
 impl Registers {
     pub fn new() -> Self {
         Registers {
-            V0: 0,
-            V1: 0,
-            V2: 0,
-            V3: 0,
-            V4: 0,
-            V5: 0,
-            V6: 0,
-            V7: 0,
-            V8: 0,
-            V9: 0,
-            VA: 0,
-            VB: 0,
-            VC: 0,
-            VD: 0,
-            VE: 0,
-            VF: 0,
+            v0: 0,
+            v1: 0,
+            v2: 0,
+            v3: 0,
+            v4: 0,
+            v5: 0,
+            v6: 0,
+            v7: 0,
+            v8: 0,
+            v9: 0,
+            va: 0,
+            vb: 0,
+            vc: 0,
+            vd: 0,
+            ve: 0,
+            vf: 0,
         }
     }
 
     pub fn from_array(&mut self, vs: &[u8; 16]) {
-        self.V0 = vs[0];
-        self.V1 = vs[1];
-        self.V2 = vs[2];
-        self.V3 = vs[3];
-        self.V4 = vs[4];
-        self.V5 = vs[5];
-        self.V6 = vs[6];
-        self.V7 = vs[7];
-        self.V8 = vs[8];
-        self.V9 = vs[9];
-        self.VA = vs[10];
-        self.VB = vs[11];
-        self.VC = vs[12];
-        self.VD = vs[13];
-        self.VE = vs[14];
-        self.VF = vs[15];
+        self.v0 = vs[0];
+        self.v1 = vs[1];
+        self.v2 = vs[2];
+        self.v3 = vs[3];
+        self.v4 = vs[4];
+        self.v5 = vs[5];
+        self.v6 = vs[6];
+        self.v7 = vs[7];
+        self.v8 = vs[8];
+        self.v9 = vs[9];
+        self.va = vs[10];
+        self.vb = vs[11];
+        self.vc = vs[12];
+        self.vd = vs[13];
+        self.ve = vs[14];
+        self.vf = vs[15];
     }
 
-    pub fn as_array(&self) -> [&u8; 16] {
+    pub fn as_array(&self) -> [u8; 16] {
         [
-            &self.V0, &self.V1, &self.V2, &self.V3, &self.V4, &self.V5, &self.V6, &self.V7, &self.V8, &self.V9,
-            &self.VA, &self.VB, &self.VC, &self.VD, &self.VE, &self.VF,
+            self.v0, self.v1, self.v2, self.v3, self.v4, self.v5, self.v6, self.v7, self.v8, self.v9,
+            self.va, self.vb, self.vc, self.vd, self.ve, self.vf,
         ]
     }
 
-    pub fn get(&self, index: u8) -> Option<u8> {
+    pub fn get(&self, index: u8) ->  Result<u8, RegisterError> {
         match index {
-            0 => Some(self.V0),
-            1 => Some(self.V1),
-            2 => Some(self.V2),
-            3 => Some(self.V3),
-            4 => Some(self.V4),
-            5 => Some(self.V5),
-            6 => Some(self.V6),
-            7 => Some(self.V7),
-            8 => Some(self.V8),
-            9 => Some(self.V9),
-            10 => Some(self.VA),
-            11 => Some(self.VB),
-            12 => Some(self.VC),
-            13 => Some(self.VD),
-            14 => Some(self.VE),
-            15 => Some(self.VF),
-            _ => None,
+            0 => Ok(self.v0),
+            1 => Ok(self.v1),
+            2 => Ok(self.v2),
+            3 => Ok(self.v3),
+            4 => Ok(self.v4),
+            5 => Ok(self.v5),
+            6 => Ok(self.v6),
+            7 => Ok(self.v7),
+            8 => Ok(self.v8),
+            9 => Ok(self.v9),
+            10 => Ok(self.va),
+            11 => Ok(self.vb),
+            12 => Ok(self.vc),
+            13 => Ok(self.vd),
+            14 => Ok(self.ve),
+            15 => Ok(self.vf),
+            _ => Err(RegisterError(index)),
         }
     }
 
-    pub fn set(&mut self, index: u8, value: u8) {
+    pub fn set(&mut self, index: u8, value: u8) -> Result<(), RegisterError> {
         match index {
-            0 => self.V0 = value,
-            1 => self.V1 = value,
-            2 => self.V2 = value,
-            3 => self.V3 = value,
-            4 => self.V4 = value,
-            5 => self.V5 = value,
-            6 => self.V6 = value,
-            7 => self.V7 = value,
-            8 => self.V8 = value,
-            9 => self.V9 = value,
-            10 => self.VA = value,
-            11 => self.VB = value,
-            12 => self.VC = value,
-            13 => self.VD = value,
-            14 => self.VE = value,
-            15 => self.VF = value,
-            _ => return,
+            0 => self.v0 = value,
+            1 => self.v1 = value,
+            2 => self.v2 = value,
+            3 => self.v3 = value,
+            4 => self.v4 = value,
+            5 => self.v5 = value,
+            6 => self.v6 = value,
+            7 => self.v7 = value,
+            8 => self.v8 = value,
+            9 => self.v9 = value,
+            10 => self.va = value,
+            11 => self.vb = value,
+            12 => self.vc = value,
+            13 => self.vd = value,
+            14 => self.ve = value,
+            15 => self.vf = value,
+            _ => return Err(RegisterError(index)),
+        };
+        Ok(())
+    }
+}
+
+mod tests {
+    #[test]
+    fn test_from_as_array() {
+        let mut reg = super::Registers::new();
+        reg.from_array(&[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]);
+        assert_eq!(reg.v0, 1);
+        assert_eq!(reg.v1, 2);
+        assert_eq!(reg.v2, 3);
+        assert_eq!(reg.v3, 4);
+        assert_eq!(reg.v4, 5);
+        assert_eq!(reg.v5, 6);
+        assert_eq!(reg.v6, 7);
+        assert_eq!(reg.v7, 8);
+        assert_eq!(reg.v8, 9);
+        assert_eq!(reg.v9, 10);
+        assert_eq!(reg.va, 11);
+        assert_eq!(reg.vb, 12);
+        assert_eq!(reg.vc, 13);
+        assert_eq!(reg.vd, 14);
+        assert_eq!(reg.ve, 15);
+        assert_eq!(reg.vf, 16);
+
+        assert_eq!(reg.as_array(), [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]);
+    }
+
+    #[test]
+    fn test_get_set() {
+        let mut reg = super::Registers::new();
+        for i in 0..15 {
+            let r = reg.set(i, i+1);
+            assert!(matches!(r, Ok(())));
+        }
+        for i in 0..15 {
+            let r = reg.get(i);
+            assert!(matches!(r, Ok(_)));
+            assert_eq!(r.unwrap(), i+1);
         }
     }
+
 }

@@ -1,59 +1,145 @@
-use std::{io, path::Path};
-mod errs;
+// use std::{io, path::Path};
+// use getch_rs::{Getch, Key};
 mod mem;
-mod ops;
+mod inst;
 mod proc;
 mod reg;
 
-fn main() -> io::Result<()> {
-    let m = mem::Memory::new();
-    // m.load_rom(Path::new("rom/keypad_test.ch8"))?;
 
-    let mut proc = proc::Processor::new(m);
+extern crate sdl2;
 
-    proc.registers.V0 = 1;
-    proc.registers.V1 = 2;
-    proc.registers.V2 = 3;
-    proc.registers.V3 = 4;
-    proc.registers.V4 = 5;
-    proc.registers.V5 = 6;
-    proc.registers.V6 = 7;
-    proc.registers.V7 = 8;
-    proc.registers.V8 = 9;
-    proc.registers.V9 = 10;
-    proc.registers.VA = 11;
-    proc.registers.VB = 12;
-    proc.registers.VC = 13;
-    proc.registers.VD = 14;
-    proc.registers.VE = 15;
-    proc.registers.VF = 16;
+use std::time::Duration;
+use std::sync::{Arc, Mutex};
+use std::thread;
 
-    let program: [u8; 12] = [
-        0x6a, 0xFA, // Set VA to 250
-        0x7a, 0x05, // Add 5 to VA
-        0xA0, 0xFF, // Set I = 255
-        0xF5, 0x55, // reg dump
-        0x8A, 0xE4, // Add register VE to VA
-        0x24, 0x00, // Call Subroutine at 1024
-    ];
 
-    let subroutine: [u8; 4] = [0x00, 0xE0, 0x00, 0xEE];
-    proc.memory.load_array(512, &program);
-    proc.memory.load_array(1024, &subroutine);
 
-    proc.memory.load_rom(Path::new("rom/keypad_test.ch8")).unwrap();
+mod disp;
+pub fn main() {
+    let display_buffer: Arc<Mutex<[u8; 2048]>> = Arc::new(Mutex::new([0;2048]));
+    let display_buffer_2 = Arc::clone(&display_buffer);
+   
 
-    // println!("{}", proc.memory);
-    for _ in 0..4 {
-        proc.reset();
-        for _ in 0..((program.len() / 2) + (subroutine.len() / 2) + 1) {
-            println!("{}", proc.PC);
-            println!("Took: {:?}", proc.execute().unwrap());
-            println!("{:?}", proc.registers);
-            println!();
-        }
-    }
     
+    let _ = thread::spawn(move || {
+        let mut memory = mem::Memory::new();
+        let _ = memory.load_array(512, &[
+            0xA0, 0x82, // Set I = 0x96
+            0x6a, 0x01, // Set VA to 1
+            0x6b, 0x08, // Set VB to 8,
+            0xda, 0xb5, // draw
+            0xA0, 0x87, // Set I = 0x91
+            0x6a, 0x09, // Set VA
+            0xda, 0xb5, // draw
+            0xA0, 0x8c, // Set I
+            0x6a, 0x11, // Set VA
+            0xda, 0xb5, // draw
+            0xA0, 0x91, // Set I
+            0x6a, 0x19, // Set VA
+            0xda, 0xb5, // draw
+            0xA0, 0x96, // Set I
+            0x6a, 0x21, // Set VA
+            0xda, 0xb5, // draw
+            0xA0, 0x9b, // Set I
+            0x6a, 0x29, // Set VA
+            0xda, 0xb5, // draw
+            0x00, 0xe0, // clear
+            0x12, 0x00, // goto 512
+        ]).unwrap();
 
-    Ok(())
+        let mut proc = proc::Processor::new(memory, display_buffer_2);
+        loop {
+            let r = proc.execute();
+            match r {
+                Ok(d) => dbg!(d),
+                Err(e) => {
+                    println!("{e}");
+                    break
+                }
+            };
+            ::std::thread::sleep(Duration::new(0, 500_000_000u32 ));
+       };
+    });
+   
+
+    let mut display = disp::Display::new(20, display_buffer);
+    display.run();
+    // handle.join().unwrap();
+
+    // const pixel_size: u32 = 20;
+
+    // let mut v = String::from("hello");
+
+    // let v1 = &v;
+    // let v2 = &v;
+    // let v3 = &mut v;
+   
+
+    // println!("{v}: {v1}, {v2}, {v3}");
+
+    // let mut screen: [bool; 32*64] = [false; 32*64];
+
+    // let sdl_context = sdl2::init().unwrap();
+    // let video_subsystem = sdl_context.video().unwrap();
+
+    // let window = video_subsystem.window("rust-sdl2 demo", 64 * pixel_size, 32*pixel_size)
+    //     .position_centered()
+    //     .build()
+    //     .unwrap();
+
+    // let mut canvas = window.into_canvas().build().unwrap();
+    // let mut pixels: Vec<Rect> = vec![];
+
+    // canvas.set_draw_color(Color::RGB(0, 0, 0));
+    // canvas.clear();
+
+
+    // canvas.present();
+    // let mut event_pump = sdl_context.event_pump().unwrap();
+    // let mut i = 0;
+
+    // let mut last_keypress = Instant::now();
+    // 'running: loop {
+    //     canvas.set_draw_color(Color::BLACK);
+    //     canvas.clear();
+        
+        
+    //     for event in event_pump.poll_iter() {
+    //         match event {
+    //             Event::Quit {..} |
+    //             Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+    //                 break 'running
+    //             },
+    //             // Event::KeyDown { keycode: Some(Keycode::Space), .. } => {
+    //             //     let since_last_keypress = last_keypress.elapsed();
+    //             //     last_keypress = Instant::now();
+    //             //     if since_last_keypress < Duration::from_millis(100) {
+    //             //         continue;
+    //             //     }
+
+                    
+    //             //     // let x = i % 64;
+    //             //     // let y = i / 64;
+    //             //     screen[i] = true;
+    //             //     i += 1;
+    //             // },
+    //             _ => {}
+    //         }
+    //     }
+
+    //     screen[i] = i%3==0;
+    //     i = (i+1) % (32*64);
+        
+    //     canvas.set_draw_color(Color::WHITE);
+    //     for x in 0..64 {
+    //         for y in 0..32 {
+    //             if screen[x + y*64] {
+    //                 canvas.fill_rect(Rect::new((x as i32)*(pixel_size as i32), (y as i32)*(pixel_size as i32), pixel_size, pixel_size));
+    //             }
+    //         }
+    //     }
+    //     canvas.present();
+        
+    //     ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 100));
+    // }
 }

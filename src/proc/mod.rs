@@ -1,7 +1,7 @@
 #![allow(dead_code)]
-use rand::prelude::*;
+use crate::{inst, mem, reg};
 use getch_rs::{Getch, Key};
-use crate::{mem, inst, reg};
+use rand::prelude::*;
 use std::fmt;
 use std::sync::{Arc, Mutex};
 use std::{error::Error, time::Duration, time::Instant};
@@ -106,49 +106,52 @@ impl Processor {
                 Ok(Key::Char(c)) => {
                     // let ord: u8 = c as u8 - 49; // '1' -> 0, '2' ->1
                     match c {
-                       '1' => return Ok(0),
-                       '2' => return Ok(1),
-                       '3' => return Ok(2),
-                       '4' => return Ok(3),
-                       'q' => return Ok(4),
-                       'w' => return Ok(5),
-                       'e' => return Ok(6),
-                       'r' => return Ok(7),
-                       'a' => return Ok(8),
-                       's' => return Ok(9),
-                       'd' => return Ok(10),
-                       'f' => return Ok(11),
-                       'z' => return Ok(12),
-                       'x' => return Ok(13),
-                       'c' => return Ok(14),
-                       'v' => return Ok(15),
-                       _ => {},
+                        '1' => return Ok(0),
+                        '2' => return Ok(1),
+                        '3' => return Ok(2),
+                        '4' => return Ok(3),
+                        'q' => return Ok(4),
+                        'w' => return Ok(5),
+                        'e' => return Ok(6),
+                        'r' => return Ok(7),
+                        'a' => return Ok(8),
+                        's' => return Ok(9),
+                        'd' => return Ok(10),
+                        'f' => return Ok(11),
+                        'z' => return Ok(12),
+                        'x' => return Ok(13),
+                        'c' => return Ok(14),
+                        'v' => return Ok(15),
+                        _ => {}
                     }
                 }
-                _ => return Err(ProcError { kind: ErrorKind::KeyboardError })
+                _ => {
+                    return Err(ProcError {
+                        kind: ErrorKind::KeyboardError,
+                    })
+                }
             }
         }
-        
     }
 
-        // Call { addr: u16 },
-        // Display,
-        // Return,
-        // Goto { addr: u16 },
-        // CallSubroutine { addr: u16 },
-        // SkipIfRegisterEquals { register: u8, value: u8 },
-        // SkipIfRegisterNotEquals { register: u8, value: u8 },
-        // SkipIfRegistersEqual { register_1: u8, register_2: u8 },
-        // SetRegister { register: u8, value: u8 },
-        // AddToRegister { register: u8, value: u8 },
-        // CopyRegister { src_register: u8, dst_register: u8 },
-        // ApplyBitwiseOr { value_register: u8, operand_register: u8 },
-        // ApplyBitwiseAnd { value_register: u8, operand_register: u8 },
-        // ApplyBitwiseXor { value_register: u8, operand_register: u8 },
-        // AddRegisters { value_register: u8, operand_register: u8 },
-        // SubtractRegisters { value_register: u8, operand_register: u8 },
-        // SetI { addr: u16 },
-        // DumpRegisters { end_register: u8 },
+    // Call { addr: u16 },
+    // Display,
+    // Return,
+    // Goto { addr: u16 },
+    // CallSubroutine { addr: u16 },
+    // SkipIfRegisterEquals { register: u8, value: u8 },
+    // SkipIfRegisterNotEquals { register: u8, value: u8 },
+    // SkipIfRegistersEqual { register_1: u8, register_2: u8 },
+    // SetRegister { register: u8, value: u8 },
+    // AddToRegister { register: u8, value: u8 },
+    // CopyRegister { src_register: u8, dst_register: u8 },
+    // ApplyBitwiseOr { value_register: u8, operand_register: u8 },
+    // ApplyBitwiseAnd { value_register: u8, operand_register: u8 },
+    // ApplyBitwiseXor { value_register: u8, operand_register: u8 },
+    // AddRegisters { value_register: u8, operand_register: u8 },
+    // SubtractRegisters { value_register: u8, operand_register: u8 },
+    // SetI { addr: u16 },
+    // DumpRegisters { end_register: u8 },
 
     pub fn execute(&mut self) -> Result<Duration, ProcError> {
         let start = Instant::now();
@@ -160,16 +163,22 @@ impl Processor {
                 display.fill(0);
                 Ok(start.elapsed())
             }
-            inst::Instruction::Draw { reg_x, reg_y, sprite_height } => {
+            inst::Instruction::Draw {
+                reg_x,
+                reg_y,
+                sprite_height,
+            } => {
                 let x = self.get_register(reg_x)?;
                 let y = self.get_register(reg_y)?;
                 let mut display = self.display.lock().unwrap();
                 for y_offset in 0..sprite_height {
-                    let row_addr = (self.i +( y_offset as u16)) as usize;
-                    let row = self.memory.get_byte(row_addr).map_err(|_| ProcError { kind: ErrorKind::InvalidMemoryAccess(row_addr)})?;
+                    let row_addr = (self.i + (y_offset as u16)) as usize;
+                    let row = self.memory.get_byte(row_addr).map_err(|_| ProcError {
+                        kind: ErrorKind::InvalidMemoryAccess(row_addr),
+                    })?;
                     for x_offset in 0..8 {
                         let pixel_addr = (x + x_offset) as usize + (((y + y_offset) as usize) * 64);
-                        println!("Coords:({}, {}), Addr:{}", x+x_offset, y+y_offset, pixel_addr);
+                        println!("Coords:({}, {}), Addr:{}", x + x_offset, y + y_offset, pixel_addr);
 
                         if row & (1 << x_offset) > 0 {
                             display[pixel_addr] = 1;
@@ -180,7 +189,6 @@ impl Processor {
                 }
                 // let row = self.memory.get_byte(self.i as usize);
                 Ok(start.elapsed())
-
             }
             inst::Instruction::Return => {
                 self.pc = self.pop_stack() as usize;
@@ -201,9 +209,7 @@ impl Processor {
                 self.pc = (addr + v0) as usize;
                 Ok(start.elapsed())
             }
-            inst::Instruction::Call { addr: _ } => { 
-                Ok(start.elapsed())
-            },
+            inst::Instruction::Call { addr: _ } => Ok(start.elapsed()),
             inst::Instruction::SetRegister { register, value } => {
                 self.set_register(register, value)?;
                 Ok(start.elapsed())
@@ -218,26 +224,38 @@ impl Processor {
                 self.set_register(register, r_v + value)?;
                 Ok(start.elapsed())
             }
-            inst::Instruction::CopyRegister{src_register, dst_register} => {
+            inst::Instruction::CopyRegister {
+                src_register,
+                dst_register,
+            } => {
                 let v = self.get_register(src_register)?;
                 self.set_register(dst_register, v)?;
                 Ok(start.elapsed())
             }
-            inst::Instruction::ApplyBitwiseOr {value_register, operand_register} => {
+            inst::Instruction::ApplyBitwiseOr {
+                value_register,
+                operand_register,
+            } => {
                 let a = self.get_register(value_register)?;
                 let b = self.get_register(operand_register)?;
 
                 self.set_register(value_register, a | b)?;
                 Ok(start.elapsed())
             }
-            inst::Instruction::ApplyBitwiseAnd {value_register, operand_register} => {
+            inst::Instruction::ApplyBitwiseAnd {
+                value_register,
+                operand_register,
+            } => {
                 let a = self.get_register(value_register)?;
                 let b = self.get_register(operand_register)?;
 
                 self.set_register(value_register, a & b)?;
                 Ok(start.elapsed())
             }
-            inst::Instruction::ApplyBitwiseXor {value_register, operand_register} => {
+            inst::Instruction::ApplyBitwiseXor {
+                value_register,
+                operand_register,
+            } => {
                 let a = self.get_register(value_register)?;
                 let b = self.get_register(operand_register)?;
 
@@ -363,7 +381,7 @@ mod tests {
         let r = proc.execute();
         assert!(matches!(r, Ok(_)));
         assert_eq!(proc.pc, 1234);
-        
+
         // Set VA = 250
         let r = proc.execute();
         assert!(matches!(r, Ok(_)));

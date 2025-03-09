@@ -8,7 +8,7 @@ use std::path::Path;
 static MAX_SIZE: usize = 4096;
 
 #[derive(Debug, Clone)]
-pub struct MemoryError (usize);
+pub struct MemoryError(usize);
 
 impl fmt::Display for MemoryError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -134,7 +134,7 @@ impl Memory {
 }
 
 mod tests {
-    use super::{Memory, MAX_SIZE, MemoryError};
+    use super::{Memory, MemoryError, MAX_SIZE};
 
     #[test]
     fn test_get_set() {

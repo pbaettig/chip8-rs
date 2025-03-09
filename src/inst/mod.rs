@@ -25,7 +25,7 @@ pub enum Instruction {
     ClearDisplay,
     Return,
     Goto { addr: u16 },
-    GotoPlusV0 {addr: u16},
+    GotoPlusV0 { addr: u16 },
     CallSubroutine { addr: u16 },
     SkipIfRegisterEquals { register: u8, value: u8 },
     SkipIfRegisterNotEquals { register: u8, value: u8 },
@@ -39,10 +39,10 @@ pub enum Instruction {
     ApplyBitwiseXor { value_register: u8, operand_register: u8 },
     AddRegisters { value_register: u8, operand_register: u8 },
     SubtractRegisters { value_register: u8, operand_register: u8 },
-    GetKey {register: u8},
+    GetKey { register: u8 },
     SetI { addr: u16 },
     DumpRegisters { end_register: u8 },
-    Draw { reg_x: u8, reg_y: u8, sprite_height: u8},
+    Draw { reg_x: u8, reg_y: u8, sprite_height: u8 },
 }
 
 impl Instruction {
@@ -107,12 +107,21 @@ impl Instruction {
                 operand_register: r_op,
             }),
             [0xa, _, _, _] => Ok(Self::SetI { addr: addr_12bit }),
-            [0xb, _, _, _] => Ok(Self::GotoPlusV0 { addr: addr_12bit}), 
-            [0xc, reg, _, _] => Ok(Self::SetRegisterRandomBitwiseAnd { register: reg, and_operand: instruction_bytes[1] }),
-            [0xd, reg_x, reg_y, sprite_height] => Ok(Self::Draw { reg_x, reg_y, sprite_height }),
+            [0xb, _, _, _] => Ok(Self::GotoPlusV0 { addr: addr_12bit }),
+            [0xc, reg, _, _] => Ok(Self::SetRegisterRandomBitwiseAnd {
+                register: reg,
+                and_operand: instruction_bytes[1],
+            }),
+            [0xd, reg_x, reg_y, sprite_height] => Ok(Self::Draw {
+                reg_x,
+                reg_y,
+                sprite_height,
+            }),
             [0xf, r_end, 0x5, 0x5] => Ok(Self::DumpRegisters { end_register: r_end }),
-            [0xf, reg, 0x0, 0xa] => Ok(Self::GetKey {register: reg}),
-            _ => Err(UnknownInstructionError { bytes: instruction_bytes }),
+            [0xf, reg, 0x0, 0xa] => Ok(Self::GetKey { register: reg }),
+            _ => Err(UnknownInstructionError {
+                bytes: instruction_bytes,
+            }),
         }
     }
 }
@@ -123,7 +132,10 @@ mod tests {
 
     #[test]
     fn test_instruction_parse() {
-        assert!(matches!(Instruction::parse([0xab, 0xcd]), Ok(Instruction::SetI { addr: 0xbcd })));
+        assert!(matches!(
+            Instruction::parse([0xab, 0xcd]),
+            Ok(Instruction::SetI { addr: 0xbcd })
+        ));
         assert!(matches!(
             Instruction::parse([0x62, 0xfe]),
             Ok(Instruction::SetRegister {

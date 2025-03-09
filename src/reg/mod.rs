@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use std::fmt;
 use std::error::Error;
+use std::fmt;
 
 pub const V0: u8 = 0;
 pub const V1: u8 = 1;
@@ -21,7 +21,7 @@ pub const VE: u8 = 14;
 pub const VF: u8 = 15;
 
 #[derive(Debug, Clone)]
-pub struct RegisterError (u8);
+pub struct RegisterError(u8);
 
 impl fmt::Display for RegisterError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -94,12 +94,12 @@ impl Registers {
 
     pub fn as_array(&self) -> [u8; 16] {
         [
-            self.v0, self.v1, self.v2, self.v3, self.v4, self.v5, self.v6, self.v7, self.v8, self.v9,
-            self.va, self.vb, self.vc, self.vd, self.ve, self.vf,
+            self.v0, self.v1, self.v2, self.v3, self.v4, self.v5, self.v6, self.v7, self.v8, self.v9, self.va, self.vb,
+            self.vc, self.vd, self.ve, self.vf,
         ]
     }
 
-    pub fn get(&self, index: u8) ->  Result<u8, RegisterError> {
+    pub fn get(&self, index: u8) -> Result<u8, RegisterError> {
         match index {
             0 => Ok(self.v0),
             1 => Ok(self.v1),
@@ -149,7 +149,7 @@ mod tests {
     #[test]
     fn test_from_as_array() {
         let mut reg = super::Registers::new();
-        reg.from_array(&[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]);
+        reg.from_array(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
         assert_eq!(reg.v0, 1);
         assert_eq!(reg.v1, 2);
         assert_eq!(reg.v2, 3);
@@ -167,21 +167,20 @@ mod tests {
         assert_eq!(reg.ve, 15);
         assert_eq!(reg.vf, 16);
 
-        assert_eq!(reg.as_array(), [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]);
+        assert_eq!(reg.as_array(), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
     }
 
     #[test]
     fn test_get_set() {
         let mut reg = super::Registers::new();
         for i in 0..15 {
-            let r = reg.set(i, i+1);
+            let r = reg.set(i, i + 1);
             assert!(matches!(r, Ok(())));
         }
         for i in 0..15 {
             let r = reg.get(i);
             assert!(matches!(r, Ok(_)));
-            assert_eq!(r.unwrap(), i+1);
+            assert_eq!(r.unwrap(), i + 1);
         }
     }
-
 }

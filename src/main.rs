@@ -11,8 +11,13 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
+
 mod disp;
 pub fn main() {
+    let pause: Arc<Mutex<u8>> = Arc::new(Mutex::new(0));
+    let pause_2: Arc<Mutex<u8>> = Arc::clone(&pause);
     let display_buffer: Arc<Mutex<[u8; 2048]>> = Arc::new(Mutex::new([0; 2048]));
     let display_buffer_2 = Arc::clone(&display_buffer);
 
@@ -49,20 +54,48 @@ pub fn main() {
 
         let mut proc = proc::Processor::new(memory, display_buffer_2);
         loop {
-            let r = proc.execute();
-            match r {
-                Ok(d) => dbg!(d),
-                Err(e) => {
-                    println!("{e}");
-                    break;
-                }
-            };
+            if *pause_2.lock().unwrap() == 0 {
+                let r = proc.execute();
+                match r {
+                    Ok(d) => dbg!(d),
+                    Err(e) => {
+                        println!("{e}");
+                        break;
+                    }
+                };
+            }
+
             ::std::thread::sleep(Duration::new(0, 200_000_000u32));
         }
     });
 
     let mut display = disp::Display::new(20, display_buffer);
-    display.run();
+    'running: loop {
+        for event in display.event_pump.poll_iter() {
+            match event {
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                } => break 'running,
+                Event::KeyDown {
+                    keycode: Some(Keycode::Space),
+                    ..
+                } => {
+                    let mut p = pause.lock().unwrap();
+                    if *p == 1 {
+                        *p = 0;
+                    } else {
+                        *p = 1;
+                    };
+                }
+                _ => {}
+            }
+        }
+        display.update(*pause.lock().unwrap());
+        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+    }
+
     // handle.join().unwrap();
 
     // const pixel_size: u32 = 20;

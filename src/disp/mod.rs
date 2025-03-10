@@ -3,7 +3,7 @@ extern crate sdl2;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
-use sdl2::rect::Rect;
+use sdl2::rect::{Point, Rect};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 pub struct Display {
@@ -53,12 +53,25 @@ impl Display {
                 }
             }
 
-            canvas.set_draw_color(Color::WHITE);
+            canvas.set_draw_color(Color::GRAY);
+
             {
                 let screen_buffer = self.screen_buffer.lock().unwrap();
                 for x in 0..64 {
+                    canvas.draw_line(
+                        Point::new(self.pixel_size as i32 * x, 0),
+                        Point::new(self.pixel_size as i32 * x, self.pixel_size as i32 * 32),
+                    );
+
                     for y in 0..32 {
-                        if screen_buffer[x + y * 64] == 1 {
+                        canvas.draw_line(
+                            Point::new(0, self.pixel_size as i32 * y),
+                            Point::new(self.pixel_size as i32 * 64, self.pixel_size as i32 * y),
+                        );
+
+                        if screen_buffer[(x + y * 64) as usize] == 1 {
+                            canvas.set_draw_color(Color::WHITE);
+
                             canvas
                                 .fill_rect(Rect::new(
                                     (x as i32) * (self.pixel_size as i32),
@@ -67,6 +80,7 @@ impl Display {
                                     self.pixel_size,
                                 ))
                                 .unwrap();
+                            canvas.set_draw_color(Color::GRAY);
                         }
                     }
                 }

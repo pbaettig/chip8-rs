@@ -22,24 +22,24 @@ pub fn main() {
             .load_array(
                 512,
                 &[
-                    0xA0, 0x82, // Set I = 0x96
-                    0x6a, 0x01, // Set VA to 1
-                    0x6b, 0x08, // Set VB to 8,
+                    0xA0, 0x82, // Set I
+                    0x6a, 0x12, // Set VA (X)
+                    0x6b, 0x0F, // Set VB (Y),
                     0xda, 0xb5, // draw
                     0xA0, 0x87, // Set I = 0x91
-                    0x6a, 0x09, // Set VA
+                    0x6a, 0x17, // Set VA
                     0xda, 0xb5, // draw
                     0xA0, 0x8c, // Set I
-                    0x6a, 0x11, // Set VA
+                    0x6a, 0x1c, // Set VA
                     0xda, 0xb5, // draw
                     0xA0, 0x91, // Set I
-                    0x6a, 0x19, // Set VA
-                    0xda, 0xb5, // draw
-                    0xA0, 0x96, // Set I
                     0x6a, 0x21, // Set VA
                     0xda, 0xb5, // draw
+                    0xA0, 0x96, // Set I
+                    0x6a, 0x26, // Set VA
+                    0xda, 0xb5, // draw
                     0xA0, 0x9b, // Set I
-                    0x6a, 0x29, // Set VA
+                    0x6a, 0x2b, // Set VA
                     0xda, 0xb5, // draw
                     0x00, 0xe0, // clear
                     0x12, 0x00, // goto 512
@@ -57,7 +57,7 @@ pub fn main() {
                     break;
                 }
             };
-            ::std::thread::sleep(Duration::new(0, 500_000_000u32));
+            ::std::thread::sleep(Duration::new(0, 200_000_000u32));
         }
     });
 

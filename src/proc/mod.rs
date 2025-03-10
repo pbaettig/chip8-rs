@@ -170,17 +170,20 @@ impl Processor {
             } => {
                 let x = self.get_register(reg_x)?;
                 let y = self.get_register(reg_y)?;
+                println!("{:?}", self.registers);
                 let mut display = self.display.lock().unwrap();
+
                 for y_offset in 0..sprite_height {
                     let row_addr = (self.i + (y_offset as u16)) as usize;
                     let row = self.memory.get_byte(row_addr).map_err(|_| ProcError {
                         kind: ErrorKind::InvalidMemoryAccess(row_addr),
                     })?;
+                    println!("Sprite Row from {:x}: {:b}", row_addr, row);
                     for x_offset in 0..8 {
                         let pixel_addr = (x + x_offset) as usize + (((y + y_offset) as usize) * 64);
                         println!("Coords:({}, {}), Addr:{}", x + x_offset, y + y_offset, pixel_addr);
 
-                        if row & (1 << x_offset) > 0 {
+                        if row & (1 << (7 - x_offset)) > 0 {
                             display[pixel_addr] = 1;
                         } else {
                             display[pixel_addr] = 0;

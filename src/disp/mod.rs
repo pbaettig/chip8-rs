@@ -16,7 +16,12 @@ pub struct Display {
     canvas: Canvas<Window>,
     pub event_pump: EventPump,
     screen_buffer: Arc<Mutex<[u8; 2048]>>,
-    pub draw_grid: bool
+    paused: bool,
+    draw_grid: bool,
+    pixel_color: Color,
+    grid_color: Color,
+    pause_color: Color,
+    background_color: Color,
 }
 
 impl Display {
@@ -39,19 +44,35 @@ impl Display {
             canvas: canvas,
             event_pump: event_pump, // canvas: canvas,
             draw_grid: false,
+            paused: false,
+            background_color: Color::BLACK,
+            pixel_color: Color::WHITE,
+            grid_color: Color::BLUE,
+            pause_color: Color::MAGENTA,
         }
+    }
+
+    pub fn set_pause(&mut self, v: bool) {
+        self.paused = v;
+    }
+
+    pub fn set_grid(&mut self, v: bool) {
+        self.draw_grid = v;
+    }
+    pub fn toggle_grid(&mut self) {
+        self.draw_grid = !self.draw_grid;
     }
 
     // pub fn set_pixel(&mut self, x: u8, y: u8, value: u8) {
     //     self.screen_buffer[(x*64 + y) as usize] = value;
     // }
 
-    pub fn update(&mut self, pause_state: u8) {
-        self.canvas.set_draw_color(Color::BLACK);
+    pub fn update(&mut self) {
+        self.canvas.set_draw_color(self.background_color);
         self.canvas.clear();
 
-        self.canvas.set_draw_color(Color::GRAY);
-        if pause_state == 1 {
+        self.canvas.set_draw_color(self.pause_color);
+        if self.paused {
             self.canvas
                 .fill_rect(Rect::new(
                     self.pixel_size as i32 * 60,
@@ -69,6 +90,7 @@ impl Display {
                 ))
                 .unwrap();
         }
+        self.canvas.set_draw_color(self.grid_color);
 
         {
             let screen_buffer = self.screen_buffer.lock().unwrap();
@@ -81,7 +103,7 @@ impl Display {
                         )
                         .unwrap();
                 }
-                
+
                 for y in 0..32 {
                     if self.draw_grid {
                         self.canvas
@@ -90,11 +112,10 @@ impl Display {
                                 Point::new(self.pixel_size as i32 * 64, self.pixel_size as i32 * y),
                             )
                             .unwrap();
-
                     }
-                    
+
                     if screen_buffer[(x + y * 64) as usize] == 1 {
-                        self.canvas.set_draw_color(Color::WHITE);
+                        self.canvas.set_draw_color(self.pixel_color);
 
                         self.canvas
                             .fill_rect(Rect::new(
@@ -104,13 +125,13 @@ impl Display {
                                 self.pixel_size,
                             ))
                             .unwrap();
-                        self.canvas.set_draw_color(Color::GRAY);
+                        self.canvas.set_draw_color(self.grid_color);
                     }
                 }
             }
         }
         self.canvas.present();
 
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 100));
+        // ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 100));
     }
 }

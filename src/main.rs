@@ -44,7 +44,7 @@ pub fn main() {
                     0x6a, 0x26, // Set VA
                     0xda, 0xb5, // draw
                     0xA0, 0x9b, // Set I
-                    0x6a, 0x2b, // Set VA
+                    // 0x6a, 0x12, //0x2b, // Set VA
                     0xda, 0xb5, // draw
                     0x00, 0xe0, // clear
                     0x12, 0x00, // goto 512
@@ -57,15 +57,22 @@ pub fn main() {
             if !*pause_2.lock().unwrap() {
                 let r = proc.execute();
                 match r {
-                    Ok(d) => dbg!(d),
+                    Ok(d) => {
+                        println!(
+                            "(PC:{}, SP:{}, I:{}) {:?}, {:?}",
+                            proc.pc, proc.sp, proc.i, proc.current_instruction, d
+                        );
+                        println!("{:?}", proc.registers)
+                    }
                     Err(e) => {
                         println!("{e}");
                         break;
                     }
                 };
+                println!();
             }
 
-            ::std::thread::sleep(Duration::new(0, 100_000_000u32));
+            ::std::thread::sleep(Duration::new(0, 500_000_000u32));
         }
     });
 

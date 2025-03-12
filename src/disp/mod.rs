@@ -63,10 +63,6 @@ impl Display {
         self.draw_grid = !self.draw_grid;
     }
 
-    // pub fn set_pixel(&mut self, x: u8, y: u8, value: u8) {
-    //     self.screen_buffer[(x*64 + y) as usize] = value;
-    // }
-
     pub fn update(&mut self) {
         self.canvas.set_draw_color(self.background_color);
         self.canvas.clear();

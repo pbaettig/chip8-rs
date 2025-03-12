@@ -43,6 +43,7 @@ pub enum Instruction {
     SetI { addr: u16 },
     DumpRegisters { end_register: u8 },
     Draw { reg_x: u8, reg_y: u8, sprite_height: u8 },
+    NoOp,
 }
 
 impl Instruction {

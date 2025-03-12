@@ -36,6 +36,7 @@ pub struct Processor {
     pub pc: usize,
     pub sp: usize,
     pub i: u16,
+    pub current_instruction: inst::Instruction,
     display: Arc<Mutex<[u8; 2048]>>,
     keys: Getch,
     rng: ThreadRng,
@@ -50,6 +51,7 @@ impl Processor {
             pc: RESET_VECTOR,
             sp: 0,
             i: 0,
+            current_instruction: inst::Instruction::NoOp,
             display: display,
             keys: Getch::new(),
             rng: rand::rng(),
@@ -155,9 +157,8 @@ impl Processor {
 
     pub fn execute(&mut self) -> Result<Duration, ProcError> {
         let start = Instant::now();
-        let instruction = self.fetch_and_decode()?;
-        println!("(PC:{}, SP:{}) | {:?}", self.pc, self.sp, instruction);
-        match instruction {
+        self.current_instruction = self.fetch_and_decode()?;
+        match self.current_instruction {
             inst::Instruction::ClearDisplay => {
                 let mut display = self.display.lock().unwrap();
                 display.fill(0);
@@ -172,6 +173,9 @@ impl Processor {
                 let y = self.get_register(reg_y)?;
                 let mut display = self.display.lock().unwrap();
 
+                // reset VF to 0
+                self.registers.vf = 0;
+
                 for y_offset in 0..sprite_height {
                     let row_addr = (self.i + (y_offset as u16)) as usize;
                     let row = self.memory.get_byte(row_addr).map_err(|_| ProcError {
@@ -179,12 +183,19 @@ impl Processor {
                     })?;
                     for x_offset in 0..8 {
                         let pixel_addr = (x + x_offset) as usize + (((y + y_offset) as usize) * 64);
+                        let shift = 7 - x_offset;
 
-                        if row & (1 << (7 - x_offset)) > 0 {
-                            display[pixel_addr] = 1;
-                        } else {
-                            display[pixel_addr] = 0;
+                        // value for pixel in sprite to draw
+                        let pixel_draw = (row & (1 << shift)) >> shift;
+
+                        // XOR'ed with what's on the screen now
+                        let pixel_xor = display[pixel_addr] ^ pixel_draw;
+                        if display[pixel_addr] == 1 && pixel_xor == 0 {
+                            // pixel was flipped from set to unset
+                            self.registers.vf = 1;
                         }
+
+                        display[pixel_addr] = pixel_xor;
                     }
                 }
                 // let row = self.memory.get_byte(self.i as usize);
@@ -329,7 +340,7 @@ impl Processor {
                 Ok(start.elapsed())
             }
             _ => Err(ProcError {
-                kind: ErrorKind::InstructionNotImplemented(instruction),
+                kind: ErrorKind::InstructionNotImplemented(self.current_instruction.clone()),
             }),
         }
     }
